@@ -202,24 +202,24 @@ app.post('/scrape-flights', async (req, res) => {
   const {
     origin,
     destination,
-    departure_date,
+    depart_date,
     return_date = null,
-    passengers = 1,
-    sources = ['google', 'kiwi', 'fly'] // caller can limit which sites to hit
+    adults = 1,
+    sources = ['google', 'kiwi', 'fly']
   } = req.body;
 
-  if (!origin || !destination || !departure_date) {
-    return res.status(400).json({ error: 'origin, destination, and departure_date are required' });
+  if (!origin || !destination || !depart_date) {
+    return res.status(400).json({ error: 'origin, destination, and depart_date are required' });
   }
 
-  const params = { origin, destination, departure_date, return_date, passengers };
+  const params = { origin, destination, departure_date: depart_date, return_date, passengers: adults };
   const scrapers = [];
 
   if (sources.includes('google')) scrapers.push(scrapeGoogleFlights(params).catch(e => ({ source: 'Google Flights', error: e.message, results: [] })));
   if (sources.includes('kiwi'))  scrapers.push(scrapeKiwi(params).catch(e => ({ source: 'Kiwi.com', error: e.message, results: [] })));
   if (sources.includes('fly'))   scrapers.push(scrapeFly(params).catch(e => ({ source: 'Fly.com', error: e.message, results: [] })));
 
-  console.log(`Scraping ${scrapers.length} sources for ${origin}→${destination} on ${departure_date}`);
+  console.log(`Scraping ${scrapers.length} sources for ${origin}→${destination} on ${depart_date}`);
 
   const sourceResults = await Promise.all(scrapers);
 
@@ -230,9 +230,9 @@ app.post('/scrape-flights', async (req, res) => {
 
   return res.json({
     route: `${origin} → ${destination}`,
-    departure_date,
+    depart_date,
     return_date,
-    passengers,
+    adults,
     sources: sourceResults.map(s => ({ name: s.source, count: s.results?.length || 0, error: s.error || null })),
     cheapest: allResults[0] || null,
     all_results: allResults
